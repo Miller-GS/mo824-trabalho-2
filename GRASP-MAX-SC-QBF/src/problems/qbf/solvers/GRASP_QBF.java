@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import metaheuristics.grasp.AbstractGRASP;
+import problems.qbf.QBF;
 import problems.qbf.QBF_Inverse;
 import solutions.Solution;
 
@@ -36,6 +37,23 @@ public class GRASP_QBF extends AbstractGRASP<Integer> {
 	 */
 	public GRASP_QBF(Double alpha, Integer iterations, String filename) throws IOException {
 		super(new QBF_Inverse(filename), alpha, iterations);
+	}
+
+    /**
+	 * Alternate constructor for the GRASP_QBF class, that receives the evaluator as a parameter.
+	 * 
+	 * @param alpha
+	 *            The GRASP greediness-randomness parameter (within the range
+	 *            [0,1])
+	 * @param iterations
+	 *            The number of iterations which the GRASP will be executed.
+	 * @param evaluator
+	 *            The QBF evaluator to be used.
+	 * @throws IOException
+	 *             necessary for I/O operations.
+	 */
+	public GRASP_QBF(Double alpha, Integer iterations, QBF evaluator) throws IOException {
+		super(evaluator, alpha, iterations);
 	}
 
 	/*
