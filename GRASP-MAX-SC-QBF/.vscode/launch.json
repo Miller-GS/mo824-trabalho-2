@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run GRASP_QBF",
+            "request": "launch",
+            "mainClass": "problems.qbf.solvers.GRASP_QBF",
+            "projectName": "GRASP-MAX-SC-QBF",
+            "cwd": "${workspaceFolder}",
+            "args": []
+        }
+    ]
+}
