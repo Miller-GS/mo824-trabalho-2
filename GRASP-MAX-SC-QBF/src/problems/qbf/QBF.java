@@ -60,14 +60,14 @@ public class QBF implements Evaluator<Integer> {
 	 * is required to perform the matrix multiplication which defines a QBF.
 	 * 
 	 * @param sol
-	 *            the solution which will be evaluated.
+	 *            the solution which will be evaluated. An item being in the list means its value will be set to 0.
 	 */
 	public void setVariables(Solution<Integer> sol) {
 
 		resetVariables();
 		if (!sol.isEmpty()) {
 			for (Integer elem : sol) {
-				variables[elem] = 1.0;
+				variables[elem] = 0.0;
 			}
 		}
 
@@ -134,7 +134,9 @@ public class QBF implements Evaluator<Integer> {
 	public Double evaluateInsertionCost(Integer elem, Solution<Integer> sol) {
 
 		setVariables(sol);
-		return evaluateInsertionQBF(elem);
+        // By adding an element to the solution, its value will be set to 0.
+        // In practice, it's like we're removing a variable.
+		return evaluateRemovalQBF(elem);
 
 	}
 
@@ -165,7 +167,9 @@ public class QBF implements Evaluator<Integer> {
 	public Double evaluateRemovalCost(Integer elem, Solution<Integer> sol) {
 
 		setVariables(sol);
-		return evaluateRemovalQBF(elem);
+        // By removing an element from the solution, its value will be set to 1.
+        // In practice, it's like we're adding a variable.
+		return evaluateInsertionQBF(elem);
 
 	}
 
@@ -197,7 +201,8 @@ public class QBF implements Evaluator<Integer> {
 	public Double evaluateExchangeCost(Integer elemIn, Integer elemOut, Solution<Integer> sol) {
 
 		setVariables(sol);
-		return evaluateExchangeQBF(elemIn, elemOut);
+        // Purposefully reversing the roles of in and out.
+		return evaluateExchangeQBF(elemOut, elemIn);
 
 	}
 
@@ -305,10 +310,10 @@ public class QBF implements Evaluator<Integer> {
 	}
 
 	/**
-	 * Reset the domain variables to their default values.
+	 * Reset the domain variables to their default values (1).
 	 */
 	public void resetVariables() {
-		Arrays.fill(variables, 0.0);
+		Arrays.fill(variables, 1.0);
 	}
 
 	/**

@@ -85,14 +85,14 @@ public class GRASP_QBF extends AbstractGRASP<Integer> {
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * This createEmptySol instantiates an empty solution and it attributes a
-	 * zero cost, since it is known that a QBF solution with all variables set
-	 * to zero has also zero cost.
+	 * This createEmptySol instantiates an empty solution. In our context, this means that all variables
+     * are set to 1. When an element is added to the solution, it will be set to 0.
+     * This inversion makes it easier to implement the set-cover restrictions.
 	 */
 	@Override
 	public Solution<Integer> createEmptySol() {
 		Solution<Integer> sol = new Solution<Integer>();
-		sol.cost = 0.0;
+		sol.cost = ObjFunction.evaluate(sol);
 		return sol;
 	}
 
