@@ -65,6 +65,11 @@ public abstract class AbstractGRASP<E> {
 	 */
 	protected Integer iterations;
 
+    /**
+     * Maximum time in seconds that the GRASP can run. If null, there is no time limit.
+     */
+    protected Long timeoutInSeconds;
+
 	/**
 	 * the Candidate List of elements to enter the solution.
 	 */
@@ -100,6 +105,15 @@ public abstract class AbstractGRASP<E> {
 	 */
 	public abstract void updateCL();
 
+    /**
+     * Returns a copy of the current Candidate List.
+     * 
+     * @return A copy of the current Candidate List.
+     */
+    public ArrayList<E> getCL() {
+        return (ArrayList<E>) CL.clone();
+    }
+
 	/**
 	 * Creates a new solution which is empty, i.e., does not contain any
 	 * element.
@@ -127,11 +141,13 @@ public abstract class AbstractGRASP<E> {
 	 *            [0,1])
 	 * @param iterations
 	 *            The number of iterations which the GRASP will be executed.
+     * @param timeoutInSeconds Maximum time in seconds that the GRASP can run. If null, there is no time limit.
 	 */
-	public AbstractGRASP(Evaluator<E> objFunction, Double alpha, Integer iterations) {
+	public AbstractGRASP(Evaluator<E> objFunction, Double alpha, Integer iterations, Long timeoutInSeconds) {
 		this.ObjFunction = objFunction;
 		this.alpha = alpha;
 		this.iterations = iterations;
+		this.timeoutInSeconds = timeoutInSeconds;
 	}
 	
 	/**
@@ -199,7 +215,7 @@ public abstract class AbstractGRASP<E> {
 	 * @return The best feasible solution obtained throughout all iterations.
 	 */
 	public Solution<E> solve() {
-
+        long startTime = System.currentTimeMillis();
 		bestSol = createEmptySol();
 		for (int i = 0; i < iterations; i++) {
 			constructiveHeuristic();
@@ -208,6 +224,13 @@ public abstract class AbstractGRASP<E> {
 				bestSol = new Solution<E>(sol);
 				if (verbose)
 					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
+			}
+			if (timeoutInSeconds != null) {
+				long elapsedTime = System.currentTimeMillis() - startTime;
+				if (elapsedTime > timeoutInSeconds * 1000) {
+					System.out.println("Timeout reached");
+					break;
+				}
 			}
 		}
 
