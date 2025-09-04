@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import metaheuristics.grasp.AbstractGRASP;
 import problems.qbf.QBF;
 import problems.qbf.QBF_Inverse;
+import problems.qbf.search_strategies.AbstractSearchStrategy;
+import problems.qbf.search_strategies.BestImprovingSearchStrategy;
+import problems.qbf.search_strategies.FirstImprovingSearchStrategy;
 import solutions.Solution;
 
 
@@ -19,6 +22,7 @@ import solutions.Solution;
  * @author ccavellucci, fusberti
  */
 public class GRASP_QBF extends AbstractGRASP<Integer> {
+    protected AbstractSearchStrategy<Integer> searchStrategy;
 
 	/**
 	 * Constructor for the GRASP_QBF class. An inverse QBF objective function is
@@ -32,11 +36,13 @@ public class GRASP_QBF extends AbstractGRASP<Integer> {
 	 * @param filename
 	 *            Name of the file for which the objective function parameters
 	 *            should be read.
+     * @param timeoutInSeconds Maximum time in seconds that the GRASP can run. If null, there is no time limit.
 	 * @throws IOException
 	 *             necessary for I/O operations.
 	 */
-	public GRASP_QBF(Double alpha, Integer iterations, String filename) throws IOException {
-		super(new QBF_Inverse(filename), alpha, iterations);
+	public GRASP_QBF(Double alpha, Integer iterations, String filename, Long timeoutInSeconds) throws IOException {
+		super(new QBF_Inverse(filename), alpha, iterations, timeoutInSeconds);
+        searchStrategy = new BestImprovingSearchStrategy<Integer>();
 	}
 
     /**
@@ -49,11 +55,12 @@ public class GRASP_QBF extends AbstractGRASP<Integer> {
 	 *            The number of iterations which the GRASP will be executed.
 	 * @param evaluator
 	 *            The QBF evaluator to be used.
+     * @param timeoutInSeconds Maximum time in seconds that the GRASP can run. If null, there is no time limit.
 	 * @throws IOException
 	 *             necessary for I/O operations.
 	 */
-	public GRASP_QBF(Double alpha, Integer iterations, QBF evaluator) throws IOException {
-		super(evaluator, alpha, iterations);
+	public GRASP_QBF(Double alpha, Integer iterations, QBF evaluator, Long timeoutInSeconds) throws IOException {
+		super(evaluator, alpha, iterations, timeoutInSeconds);
 	}
 
 	/*
@@ -122,68 +129,31 @@ public class GRASP_QBF extends AbstractGRASP<Integer> {
 	 */
 	@Override
 	public Solution<Integer> localSearch() {
-
-		Double minDeltaCost;
-		Integer bestCandIn = null, bestCandOut = null;
-
-		do {
-			minDeltaCost = Double.POSITIVE_INFINITY;
-			updateCL();
-				
-			// Evaluate insertions
-			for (Integer candIn : CL) {
-				double deltaCost = ObjFunction.evaluateInsertionCost(candIn, sol);
-				if (deltaCost < minDeltaCost) {
-					minDeltaCost = deltaCost;
-					bestCandIn = candIn;
-					bestCandOut = null;
-				}
-			}
-			// Evaluate removals
-			for (Integer candOut : sol) {
-				double deltaCost = ObjFunction.evaluateRemovalCost(candOut, sol);
-				if (deltaCost < minDeltaCost) {
-					minDeltaCost = deltaCost;
-					bestCandIn = null;
-					bestCandOut = candOut;
-				}
-			}
-			// Evaluate exchanges
-			for (Integer candIn : CL) {
-				for (Integer candOut : sol) {
-					double deltaCost = ObjFunction.evaluateExchangeCost(candIn, candOut, sol);
-					if (deltaCost < minDeltaCost) {
-						minDeltaCost = deltaCost;
-						bestCandIn = candIn;
-						bestCandOut = candOut;
-					}
-				}
-			}
-			// Implement the best move, if it reduces the solution cost.
-			if (minDeltaCost < -Double.MIN_VALUE) {
-				if (bestCandOut != null) {
-					sol.remove(bestCandOut);
-					CL.add(bestCandOut);
-				}
-				if (bestCandIn != null) {
-					sol.add(bestCandIn);
-					CL.remove(bestCandIn);
-				}
-				ObjFunction.evaluate(sol);
-			}
-		} while (minDeltaCost < -Double.MIN_VALUE);
-
-		return null;
+        return searchStrategy.localSearch(ObjFunction, sol, this);
 	}
+
+    public AbstractSearchStrategy<Integer> getSearchStrategy() {
+        return searchStrategy;
+    }
+
+    public void setSearchStrategy(AbstractSearchStrategy<Integer> searchStrategy) {
+        this.searchStrategy = searchStrategy;
+    }
 
 	/**
 	 * A main method used for testing the GRASP metaheuristic.
 	 * 
 	 */
 	public static void main(String[] args) throws IOException {
+        // Specific parameters for testing
+        Double alpha = 0.05;
+        Integer iterations = 1000;
+        String filename = "GRASP-MAX-SC-QBF/instances/qbf/qbf020";
+        AbstractSearchStrategy<Integer> searchStrategy = new BestImprovingSearchStrategy<Integer>();
 
 		long startTime = System.currentTimeMillis();
-		GRASP_QBF grasp = new GRASP_QBF(0.05, 1000, "GRASP-MAX-SC-QBF/instances/qbf/qbf040");
+		GRASP_QBF grasp = new GRASP_QBF(alpha, iterations, filename);
+		grasp.setSearchStrategy(searchStrategy);
 		Solution<Integer> bestSol = grasp.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
