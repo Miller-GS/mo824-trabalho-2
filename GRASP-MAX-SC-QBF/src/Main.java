@@ -28,11 +28,11 @@ public class Main {
         for (String instance : instances) {
             for (InstanceParameters param : parameters) {
                 try {
-                    GRASP_QBF_SC solver = param.createSolver(instance);
+                    GRASP_QBF_SC solver = param.createSolver(instance, logger);
                     long startTime = System.currentTimeMillis();
-                    
-                    String paramInfo = String.format("alpha=%.2f, iterations=%d, timeoutInSeconds=%d", 
-                                                   param.alpha, param.iterations, param.timeoutInSeconds);
+
+                    String paramInfo = String.format("alpha=%.2f, iterations=%d, timeoutInSeconds=%d, maxIterationsWithoutImprovement=%d",
+                            param.alpha, param.iterations, param.timeoutInSeconds, param.maxIterationsWithoutImprovement);
                     logger.info("Solving instance " + instance + " with parameters: " + paramInfo);
                     logger.info("Search Strategy: " + param.searchStrategy.getClass().getSimpleName());
                     
@@ -97,16 +97,17 @@ public class Main {
     protected static InstanceParameters[] listParameters() {
         Integer iterations = Integer.MAX_VALUE; // Run until timeout
         Long timeoutInSeconds = 60L * 30L; // 30 minutes
+        Integer maxIterationsWithoutImprovement = 100000; // Stop if no improvement in 100,000 iterations
         Double alpha1 = 0.05;
         Double alpha2 = 0.5;
 
         return new InstanceParameters[] {
             // PADRÃO: alpha = 0.05, FirstImproving, heurística construtiva padrão
-            new InstanceParameters(alpha1, iterations, new FirstImprovingSearchStrategy<Integer>(), timeoutInSeconds),
+            new InstanceParameters(alpha1, iterations, new FirstImprovingSearchStrategy<Integer>(), timeoutInSeconds, maxIterationsWithoutImprovement),
             // PADRÃO + ALPHA: PADRÃO, mas com alpha = 0.5
-            new InstanceParameters(alpha2, iterations, new FirstImprovingSearchStrategy<Integer>(), timeoutInSeconds),
+            new InstanceParameters(alpha2, iterations, new FirstImprovingSearchStrategy<Integer>(), timeoutInSeconds, maxIterationsWithoutImprovement),
             //PADRÃO + BEST: PADRÃO, mas com BestImproving
-            new InstanceParameters(alpha1, iterations, new BestImprovingSearchStrategy<Integer>(), timeoutInSeconds),
+            new InstanceParameters(alpha1, iterations, new BestImprovingSearchStrategy<Integer>(), timeoutInSeconds, maxIterationsWithoutImprovement),
             // PADRÃO + HC1: PADRÃO, mas com heurística construtiva alternativa 1
             // @TODO: implementar
             // PADRÃO + HC2: PADRÃO, mas com heurística construtiva alternativa 2
@@ -120,17 +121,20 @@ class InstanceParameters {
     protected Integer iterations;
     protected AbstractSearchStrategy<Integer> searchStrategy;
     protected Long timeoutInSeconds;
+    protected Integer maxIterationsWithoutImprovement;
 
-    public InstanceParameters(Double alpha, Integer iterations, AbstractSearchStrategy<Integer> searchStrategy, Long timeoutInSeconds) {
+    public InstanceParameters(Double alpha, Integer iterations, AbstractSearchStrategy<Integer> searchStrategy, Long timeoutInSeconds, Integer maxIterationsWithoutImprovement) {
         this.alpha = alpha;
         this.iterations = iterations;
         this.searchStrategy = searchStrategy;
         this.timeoutInSeconds = timeoutInSeconds;
+        this.maxIterationsWithoutImprovement = maxIterationsWithoutImprovement;
     }
 
-    public GRASP_QBF_SC createSolver(String filename) throws Exception {
-        GRASP_QBF_SC solver = new GRASP_QBF_SC(alpha, iterations, filename, timeoutInSeconds);
+    public GRASP_QBF_SC createSolver(String filename, Logger logger) throws Exception {
+        GRASP_QBF_SC solver = new GRASP_QBF_SC(alpha, iterations, filename, timeoutInSeconds, maxIterationsWithoutImprovement);
         solver.setSearchStrategy(searchStrategy);
+        solver.setLogger(logger);
         return solver;
     }
 }

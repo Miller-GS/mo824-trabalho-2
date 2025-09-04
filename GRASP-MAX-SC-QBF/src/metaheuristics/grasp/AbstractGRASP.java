@@ -5,8 +5,10 @@ package metaheuristics.grasp;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.logging.Logger;
 
 import problems.Evaluator;
+import problems.qbf.solvers.GRASP_QBF;
 import solutions.Solution;
 
 /**
@@ -18,6 +20,7 @@ import solutions.Solution;
  *            Generic type of the element which composes the solution.
  */
 public abstract class AbstractGRASP<E> {
+    private Logger logger;
 
 	/**
 	 * flag that indicates whether the code should print more information on
@@ -69,6 +72,11 @@ public abstract class AbstractGRASP<E> {
      * Maximum time in seconds that the GRASP can run. If null, there is no time limit.
      */
     protected Long timeoutInSeconds;
+
+	/**
+	 * Maximum number of iterations without improvement before stopping. If null, there is no limit.
+	 */
+	protected Integer maxIterationsWithoutImprovement;
 
 	/**
 	 * the Candidate List of elements to enter the solution.
@@ -142,13 +150,20 @@ public abstract class AbstractGRASP<E> {
 	 * @param iterations
 	 *            The number of iterations which the GRASP will be executed.
      * @param timeoutInSeconds Maximum time in seconds that the GRASP can run. If null, there is no time limit.
+	 * @param maxIterationsWithoutImprovement Maximum number of iterations without improvement before stopping. If null, there is no limit.
 	 */
-	public AbstractGRASP(Evaluator<E> objFunction, Double alpha, Integer iterations, Long timeoutInSeconds) {
+	public AbstractGRASP(Evaluator<E> objFunction, Double alpha, Integer iterations, Long timeoutInSeconds, Integer maxIterationsWithoutImprovement) {
 		this.ObjFunction = objFunction;
 		this.alpha = alpha;
 		this.iterations = iterations;
 		this.timeoutInSeconds = timeoutInSeconds;
+		this.maxIterationsWithoutImprovement = maxIterationsWithoutImprovement;
+		this.logger = Logger.getLogger(this.getClass().getName());
 	}
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
 	
 	/**
 	 * The GRASP constructive heuristic, which is responsible for building a
@@ -217,22 +232,43 @@ public abstract class AbstractGRASP<E> {
 	public Solution<E> solve() {
         long startTime = System.currentTimeMillis();
 		bestSol = createEmptySol();
-		for (int i = 0; i < iterations; i++) {
+		int iterationsWithoutImprovement = 0;
+
+        int i = 0;
+		for (; i < iterations; i++) {
 			constructiveHeuristic();
 			localSearch();
 			if (bestSol.cost > sol.cost) {
 				bestSol = new Solution<E>(sol);
+				iterationsWithoutImprovement = 0; // Reset counter when improvement is found
 				if (verbose)
-					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
+					logger.info("(Iter. " + i + ") BestSol = " + bestSol);
+			} else {
+				iterationsWithoutImprovement++; // Increment counter when no improvement
 			}
+			
+			// Check if maximum iterations without improvement limit is reached
+			if (maxIterationsWithoutImprovement != null && iterationsWithoutImprovement >= maxIterationsWithoutImprovement) {
+				if (verbose)
+					logger.info("Maximum iterations without improvement reached: " + maxIterationsWithoutImprovement);
+				break;
+			}
+			
 			if (timeoutInSeconds != null) {
 				long elapsedTime = System.currentTimeMillis() - startTime;
 				if (elapsedTime > timeoutInSeconds * 1000) {
-					System.out.println("Timeout reached");
+					logger.info("Timeout reached");
 					break;
 				}
 			}
 		}
+        if (verbose) {
+            if (i == iterations) {
+                logger.info("GRASP finished after reaching the maximum number of iterations: " + iterations);
+            }
+            logger.info("GRASP finished after " + i + " iterations.");
+            logger.info("Best solution found: " + bestSol);
+        }
 
 		return bestSol;
 	}

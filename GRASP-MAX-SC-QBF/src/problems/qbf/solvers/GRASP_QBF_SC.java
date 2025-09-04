@@ -23,11 +23,12 @@ public class GRASP_QBF_SC extends GRASP_QBF {
 	 *            Name of the file for which the objective function parameters
 	 *            should be read.
      * @param timeoutInSeconds Maximum time in seconds that the GRASP can run. If null, there is no time limit.
+	 * @param maxIterationsWithoutImprovement Maximum number of iterations without improvement before stopping. If null, there is no limit.
 	 * @throws IOException
 	 *             necessary for I/O operations.
 	 */
-	public GRASP_QBF_SC(Double alpha, Integer iterations, String filename, Long timeoutInSeconds) throws IOException {
-		super(alpha, iterations, new QBF_SC_Inverse(filename), timeoutInSeconds);
+	public GRASP_QBF_SC(Double alpha, Integer iterations, String filename, Long timeoutInSeconds, Integer maxIterationsWithoutImprovement) throws IOException {
+		super(alpha, iterations, new QBF_SC_Inverse(filename), timeoutInSeconds, maxIterationsWithoutImprovement);
 	}
 
     /*
@@ -48,13 +49,14 @@ public class GRASP_QBF_SC extends GRASP_QBF {
 	public static void main(String[] args) throws IOException {
         // Specific parameters for testing
         Double alpha = 0.05;
-        Integer iterations = 1000;
+        Integer iterations = 100000;
         String filename = "GRASP-MAX-SC-QBF/instances/qbf-sc/instance_6.txt";
         AbstractSearchStrategy<Integer> searchStrategy = new BestImprovingSearchStrategy<Integer>();
         Long timeoutInSeconds = 60L * 30L; // 30 minutes
+        Integer maxIterationsWithoutImprovement = 1000;
 
 		long startTime = System.currentTimeMillis();
-		GRASP_QBF_SC grasp = new GRASP_QBF_SC(alpha, iterations, filename, timeoutInSeconds);
+		GRASP_QBF_SC grasp = new GRASP_QBF_SC(alpha, iterations, filename, timeoutInSeconds, maxIterationsWithoutImprovement);
 		grasp.setSearchStrategy(searchStrategy);
 		Solution<Integer> bestSol = grasp.solve();
 		System.out.println("maxVal = " + bestSol);
